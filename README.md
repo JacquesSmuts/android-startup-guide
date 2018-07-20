@@ -51,67 +51,67 @@ And create your own Application class which looks something this
 
     class MyApp: Application(){
 
-    companion object {
-        lateinit var kodein: Kodein
-            private set
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            // This process is dedicated to LeakCanary for heap analysis.
-            // You should not init your app in this process.
-            return;
-        }
-        if (BuildConfig.FLAVOR == "dev") {
-            LeakCanary.install(this)
-        }
-        if (BuildConfig.DEBUG) {
-            Timber.plant(DebugTree())
+        companion object {
+            lateinit var kodein: Kodein
+                private set
         }
 
-        val that = this
-        kodein = Kodein {
-            bind<Application>() with instance(that)
-            bind<Context>() with instance(applicationContext)
-            bind<AuthService>() with singleton { AuthService() }
-            bind<ApiService>() with singleton { ApiService(instance()) }
+        override fun onCreate() {
+            super.onCreate()
+            if (LeakCanary.isInAnalyzerProcess(this)) {
+                // This process is dedicated to LeakCanary for heap analysis.
+                // You should not init your app in this process.
+                return;
+            }
+            if (BuildConfig.FLAVOR == "dev") {
+                LeakCanary.install(this)
+            }
+            if (BuildConfig.DEBUG) {
+                Timber.plant(DebugTree())
+            }
+
+            val that = this
+            kodein = Kodein {
+                bind<Application>() with instance(that)
+                bind<Context>() with instance(applicationContext)
+                bind<AuthService>() with singleton { AuthService() }
+                bind<ApiService>() with singleton { ApiService(instance()) }
+            }
         }
     }
-}
 
 ## BaseActivity
 With a BaseActivity which looks a bit like this:
 
     abstract class BaseActivity : AppCompatActivity() {
 
-    protected val apiService: ApiService by KinApp.kodein.lazy.instance()
+        protected val apiService: ApiService by KinApp.kodein.lazy.instance()
 
-    protected val rxSubs : io.reactivex.disposables.CompositeDisposable by lazy {
-        io.reactivex.disposables.CompositeDisposable()
-    }
+        protected val rxSubs : io.reactivex.disposables.CompositeDisposable by lazy {
+            io.reactivex.disposables.CompositeDisposable()
+        }
 
-    override fun onResume() {
-        super.onResume()
+        override fun onResume() {
+            super.onResume()
 
-        rxSubs.add(RxBus.listen(ProgressEvent::class.java).subscribe(){
-            showProgress(it.shouldShowProgressBar)
-        })
+            rxSubs.add(RxBus.listen(ProgressEvent::class.java).subscribe(){
+                showProgress(it.shouldShowProgressBar)
+            })
 
-    }
+        }
 
-    /**
-     * All activities require some sort of loading state
-     */
-    abstract fun showProgress(shouldShowProgress: Boolean = true)
+        /**
+         * All activities require some sort of loading state
+         */
+        abstract fun showProgress(shouldShowProgress: Boolean = true)
 
-    protected fun hideProgress(){
-        showProgress(false)
-    }
+        protected fun hideProgress(){
+            showProgress(false)
+        }
 
-    override fun onPause() {
-        rxSubs.clear()
-        super.onPause()
-    }
+        override fun onPause() {
+            rxSubs.clear()
+            super.onPause()
+        }
     }    
     
