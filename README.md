@@ -113,5 +113,5 @@ With a BaseActivity which looks a bit like this:
         rxSubs.clear()
         super.onPause()
     }
-}    
+    }    
     
